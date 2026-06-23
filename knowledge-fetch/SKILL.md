@@ -15,7 +15,7 @@ metadata:
 
 - 先读 `route.md`。`route.md` 不是选择最短路径，短不短无所谓；它索引的是已经沉淀的、能够运行的常用命令，例如检查 knowbase 是否存在、检查认证、按群 ID 拉如流群聊历史、按群名或成员线索搜群后再拉取；如果里面有可直接复用的命令，优先按它执行。
 - 如果运行中发现环境、路径、依赖、认证、配置字段或 source 参数问题，并形成可复用修正，一定要更新 `route.md`。
-- 如果用户指出输出结构、摘要方式、取数范围、信息编造等可沉淀问题，一定要更新 `experiment.md`；只写 mock 示例，不写真实群名、仓库名、链接、token、AK/SK。
+- 如果用户指出输出结构、取数范围、权限解释、信息编造等可沉淀问题，一定要更新 `experiment.md`；只写 mock 示例，不写真实群名、仓库名、链接、token、AK/SK。
 
 **重要说明**：
 - 不支持如流知识库(ku)文档，如需使用知识库(ku)文档请使用知识库相关skill
@@ -40,25 +40,24 @@ which knowbase
 knowbase login status
 ```
 
-knowbase 支持两种认证模式：`COMATE_AUTH_TOKEN` 环境变量 和 UGate 本地登录。
+knowbase 常用认证模式是 `COMATE_AUTH_TOKEN` 环境变量。
 
 - 如果已设置 `COMATE_AUTH_TOKEN`，客户端会优先使用环境变量认证。
-- 如果未设置 `COMATE_AUTH_TOKEN`，客户端会读取本地 UGate 登录态。
-- 如果两种认证都不存在，先引导用户完成认证，不要继续执行知识拉取。
+- 如需拉如流群聊历史，先引导用户打开 `https://console.cloud.baidu-int.com/onetool/auth-manage/my-services`，点击“复制个人 Token”，把复制结果发给 agent 或复制到剪贴板后告知 agent，再由 agent 在当前 shell 临时设置 `COMATE_AUTH_TOKEN`。
+- 如果认证不存在或无效，先引导用户完成 onetool token 获取，不要继续执行知识拉取。
 
-**个人用户使用 UGate 登录：**
+**临时设置 onetool 个人 Token：**
 
 ```bash
-# 1. 访问 https://uuap.baidu.com/agent/token 获取 UGate token
-# 2. 只保留真实 JWT token，不要带 “ugate token:” 前缀及其他文字
-knowbase login <username> <ugate-token>
+export COMATE_AUTH_TOKEN="<Bearer token>"
+knowbase login status
 ```
 
 常用认证命令：
 
 ```bash
 knowbase login status
-knowbase logout
+unset COMATE_AUTH_TOKEN
 ```
 
 ## 核心工作流程
@@ -69,7 +68,7 @@ knowbase logout
 ```bash
 knowbase login status
 ```
-如果显示未登录，优先引导个人用户通过 `knowbase login <username> <ugate-token>` 登录；如果用户运行在内置 token 环境，则确认 `COMATE_AUTH_TOKEN` 已正确设置。
+如果显示未登录，先引导用户打开 onetool 授权页面复制个人 Token，并由 agent 在当前 shell 临时设置 `COMATE_AUTH_TOKEN` 后重试。
 
 理解用户想要拉取什么类型的知识:
 - **iCode DeepWiki** - Wiki文档
@@ -501,10 +500,9 @@ knowbase login status
 
 根据输出处理：
 - `认证模式: comate (环境变量)`：当前走 `COMATE_AUTH_TOKEN`，如 token 无效需要重新设置环境变量。
-- `认证模式: ugate (本地 Token)`：当前走 UGate 本地登录态。
-- `认证状态: 未登录`：需要设置 `COMATE_AUTH_TOKEN` 或执行 `knowbase login <username> <ugate-token>`。
+- `认证状态: 未登录`：引导用户打开 onetool 授权页面复制个人 Token，并临时设置 `COMATE_AUTH_TOKEN`。
 
-注意：只要 `COMATE_AUTH_TOKEN` 存在，就会优先使用环境变量；如需测试或使用 UGate，先执行 `unset COMATE_AUTH_TOKEN`。
+注意：只在当前 shell 临时设置 `COMATE_AUTH_TOKEN`；任务结束后执行 `unset COMATE_AUTH_TOKEN`。
 
 ### iCafe卡片查询为空
 

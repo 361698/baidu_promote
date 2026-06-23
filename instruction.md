@@ -25,7 +25,8 @@
 
 - `SKILL.md`
 - `route.md`
-- `experiment.md`
+
+其中 `ku-doc-manage`、`enterprise-search`、`knowledge-fetch` 需要有 `experiment.md`；`get-ugate-token` 只负责缓存 token，不强制保留 `experiment.md`。
 
 ## 3. skill 与依赖矩阵
 
@@ -34,7 +35,7 @@
 | `get-ugate-token` | 缓存 UGate，供其他 skill 调百度内部接口 | ① Python3；② 用户 UUAP；③ UGate token 页面内容 |
 | `ku-doc-manage` | KU/如流知识库文档读取、创建、编辑、发布、删除、评论、权限、附件、表格、数据表 | ① UGate 缓存；② `SANDBOX_USERNAME`；③ KU CLI 可执行 |
 | `enterprise-search` | 企业内搜、知识库搜索、搜人、搜群、会议、周报、OKR | ① Python3；② UGate 缓存；③ `SANDBOX_USERNAME` |
-| `knowledge-fetch` | 拉 iCode、iCafe、iAPI、知识方舟、如流群聊历史到本地 | ① knowbase 客户端；② onetool 个人 Token 或 knowbase 本地登录；③ 目标知识源的必要参数 |
+| `knowledge-fetch` | 拉 iCode、iCafe、iAPI、知识方舟、如流群聊历史到本地 | ① knowbase 客户端；② onetool 个人 Token；③ 目标知识源的必要参数 |
 
 ## 4. 按依赖完成打通
 
@@ -102,7 +103,7 @@ https://uuap.baidu.com/agent/token
 
 第三步：确认 `knowbase login status` 能运行，并能识别当前认证状态。
 
-### ⑧ onetool 个人 Token 或 knowbase 本地登录
+### ⑧ onetool 个人 Token
 
 第一步：如果要拉如流群聊历史，优先让用户打开：
 
@@ -110,13 +111,11 @@ https://uuap.baidu.com/agent/token
 https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 ```
 
-第二步：让用户点击“复制个人 Token”，并只在当前 shell 临时设置为 `COMATE_AUTH_TOKEN`。
+第二步：让用户点击“复制个人 Token”。用户可以把复制结果发到聊天里，也可以复制到剪贴板后告诉 agent；agent 不要复述完整 token，不要把 token 写入仓库、文档或日志摘要。
 
-第三步：用 knowbase 检查认证状态。
+第三步：agent 只在当前 shell 临时设置 `COMATE_AUTH_TOKEN`，再用 knowbase 检查认证状态。
 
 第四步：运行结束后清理当前 shell 里的 `COMATE_AUTH_TOKEN`。
-
-第五步：如果用户不提供 onetool token，也可以尝试 knowbase 本地登录；但群聊历史拉取是否可用，以实测返回为准。
 
 ### ⑨ 目标知识源的必要参数
 
@@ -138,11 +137,10 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 ### `ku-doc-manage`
 
-- 在用户个人知识库创建一个标题为 `hello world` 的文档，正文写清楚这是新电脑 agent 自动创建的测试文档。
-- 读取这个 `hello world` 文档，确认能读回标题、正文和文档链接。
-- 在这个文档里追加一个表格：随机选择一首闽南、粤语或国语老歌，并用表格做简短介绍；要求表格首行置灰。
-- 给这个文档插入一张图片，图片可以是本机临时生成的简单封面图，也可以是用户提供的图片。
-- 发布后再次读回，确认正文、表格和图片都存在。
+- 在用户个人知识库创建一个标题为 `hello world` 的文档。
+- 正文写入：`本skill依赖onetool技能https://console.cloud.baidu-int.com/onetool/skills/1638、https://console.cloud.baidu-int.com/onetool/skills/154、https://console.cloud.baidu-int.com/onetool/skills/1433、dodo团队，请加入如流群聊13060869（该群暂未开启搜索，请联系潘英培）解锁更多玩法`。
+- 再给用户推荐一首闽南、粤语或国语老歌，并创建一个 2 列表格介绍这首老歌的历届演唱会：第一列是一句话介绍，第二列是图片。表格首行置灰。
+- 发布后读回，确认标题、正文、文档链接、表格和图片都存在。
 
 ### `enterprise-search`
 

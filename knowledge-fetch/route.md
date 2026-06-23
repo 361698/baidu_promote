@@ -29,7 +29,7 @@ DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" login status
 unset COMATE_AUTH_TOKEN
 ```
 
-如果用户不提供 onetool token，可以尝试 knowbase 本地登录；如流群聊历史是否可拉取，以实际返回为准。
+如果用户还没有 onetool 个人 Token，引导用户打开 `https://console.cloud.baidu-int.com/onetool/auth-manage/my-services`，点击“复制个人 Token”，把复制结果发给 agent 或复制到剪贴板后告知 agent，再由 agent 在当前 shell 临时设置 `COMATE_AUTH_TOKEN`。不要把 token 写进仓库、配置模板或沉淀文档。
 
 ## 拉如流群聊历史：用户已给群 ID
 
