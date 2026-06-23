@@ -1,23 +1,8 @@
 # knowledge-fetch route
 
-依赖：`knowbase` 客户端；优先使用 `COMATE_AUTH_TOKEN`，也可使用 knowbase 本地 UGate 登录。
+`route.md` 用来沉淀可重复运行的命令。确认 knowbase 是否存在、获取 onetool token 等依赖打通放在仓库外层 `instruction.md`；本文件只提醒依赖检查，并给出数据拉取时可复用的运行方式。
 
-## 安装与认证
-
-安装 knowbase：
-
-```bash
-/bin/bash -c "$(curl -fsSL http://knowbase-client.bj.bcebos.com/knowbase/install.sh)"
-```
-
-检查：
-
-```bash
-which knowbase
-knowbase login status
-```
-
-如果 `knowbase` 不在 PATH，探测完整安装目录后直调：
+## 检查 knowbase 是否存在
 
 ```bash
 if command -v knowbase >/dev/null 2>&1; then
@@ -25,40 +10,36 @@ if command -v knowbase >/dev/null 2>&1; then
 else
   KNOWBASE="$(find "$HOME/.knowbase" -path '*/bin/knowbase' -type f 2>/dev/null | sort -V | tail -1)"
 fi
-test -n "$KNOWBASE" || { echo "knowbase not found"; exit 1; }
+test -n "$KNOWBASE" || { echo "knowbase not found; install it using instruction.md first"; exit 1; }
 DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" login status
 ```
 
-临时使用 onetool 个人 Token：
+## 检查认证
+
+优先临时使用 onetool 个人 Token：
 
 ```bash
 export COMATE_AUTH_TOKEN="<Bearer token>"
-"$KNOWBASE" login status
+DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" login status
 ```
 
-运行结束后：
+运行完成后清理：
 
 ```bash
 unset COMATE_AUTH_TOKEN
 ```
 
-## 直接下载链接
+如果用户不提供 onetool token，可以尝试 knowbase 本地登录；如流群聊历史是否可拉取，以实际返回为准。
 
-```bash
-knowbase download "https://console.cloud.baidu-int.com/devops/icode/repos/<repo>/tree/<branch>"
-```
+## 拉如流群聊历史：用户已给群 ID
 
-支持链接类型以 `SKILL.md` 和 `references/config-schema.md` 为准。
+适用：用户明确给了如流群 ID，或已经从其他来源拿到群 ID。
 
-## 拉如流群聊历史
+先尽量校验 dodo 是否在群内：如果有群名或成员线索，用 `enterprise-search` 搜群查看候选结果里的 `m_names`、群名和描述；如果只有群 ID 且无法从通讯录搜索到成员列表，可以继续尝试拉取，但要在回复里说明“是否可抓取以 knowbase 返回为准”。
 
-先用 `enterprise-search` 搜群拿 `gid`：
+默认时间范围：上周。计算上周一 00:00:00 到上周日 23:59:59 的毫秒时间戳后写入配置；如果用户指定时间范围，按用户指定范围。
 
-```bash
-SANDBOX_USERNAME="<uuap>" python3 "$HOME/.codex/skills/enterprise-search/scripts/address_search.py" --type group --q "群名或成员名"
-```
-
-写配置文件：
+生成配置：
 
 ```yaml
 version: "1.0"
@@ -66,19 +47,19 @@ version: "1.0"
 meta:
   projectId: "00000000-0000-0000-0000-000000000001"
   version: "1.0.0"
-  description: "Fetch recent infoflow group messages"
+  description: "Fetch infoflow group messages"
   owner: "<uuap>@baidu.com"
 
 storage:
-  basePath: "/tmp/knowbase-output-group"
+  basePath: "/tmp/knowbase-output-group-<groupId>"
 
 sources:
   - type: "infoflow_group_message"
     enabled: true
     filters:
       - groupId: "<groupId>"
-        startTimeStamp: 1767225600000
-        endTimeStamp: 1769817599000
+        startTimeStamp: <last-week-monday-00-ms>
+        endTimeStamp: <last-week-sunday-235959-ms>
     output:
       exportType: "md"
 
@@ -90,7 +71,7 @@ entrypoint:
 
 ```bash
 export COMATE_AUTH_TOKEN="<Bearer token>"
-"$KNOWBASE" -c /path/to/infoflow-group-message.yaml
+DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" -c /path/to/infoflow-group-message.yaml
 unset COMATE_AUTH_TOKEN
 ```
 
@@ -102,32 +83,28 @@ unset COMATE_AUTH_TOKEN
 <basePath>/infoflow_group_message/infoflow_group_message_usage.md
 ```
 
-## 拉 iCode 仓库
+如果返回权限不足、机器人不在群、当前身份不是群成员等错误，告诉用户：只有 dodo 在群内且当前身份有权限的群才能抓取聊天记录；请把 dodo 拉进群或补齐权限后重试。
 
-```yaml
-version: "1.0"
-meta:
-  projectId: "00000000-0000-0000-0000-000000000002"
-  version: "1.0.0"
-  description: "Fetch repo"
-  owner: "<uuap>@baidu.com"
-storage:
-  basePath: "/tmp/knowbase-output-repo"
-sources:
-  - type: "icode_repo"
-    enabled: true
-    filters:
-      - repo: "baidu/team/project"
-        branch: "master"
-        depth: "1"
-entrypoint:
-  type: "rule"
-```
+## 拉如流群聊历史：用户要求看所有相关群聊
+
+适用：用户没有给群 ID，而是要求按群名、成员名、主题线索查看多个群聊。
+
+第一步：先用 `enterprise-search` 搜群，拿候选 `gid`、群名、成员列表和群规模信息。
 
 ```bash
-"$KNOWBASE" -c /path/to/repo.yaml
+SANDBOX_USERNAME="<uuap>" python3 "$HOME/.codex/skills/enterprise-search/scripts/address_search.py" --type group --q "<群名或成员名或主题线索>"
 ```
+
+第二步：优先筛选 `m_names`、群名、描述等结果中能看到 dodo 或用户明确确认 dodo 已在群内的群。`address_search.py` 只能辅助判断候选群，最终能否拉取仍以 knowbase 返回为准。
+
+第三步：对筛选后的每个群，按“用户已给群 ID”的配置方式抓取上周消息。
+
+第四步：回复用户时说明：
+
+- 只抓取了 dodo 在群内或可访问的群。
+- 如果某些群权限不足、机器人不在群或当前身份不在群，已经跳过或失败。
+- 如需补抓，请把 dodo 拉进群并确认当前身份有权限后重试。
 
 ## 维护
 
-如果某类 source 的最小配置、认证方式或输出路径经实测变化，更新本文件。不要写真实群名、仓库名、token 或内部业务内容。
+如果 `infoflow_group_message` 的配置字段、认证方式、默认时间范围、输出路径或权限错误处理经实测变化，更新本文件。不要写真实群名、群号、token 或内部业务内容。
