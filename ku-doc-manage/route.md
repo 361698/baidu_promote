@@ -72,6 +72,20 @@ bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manag
 
 稳定创建可见正文：先创建空文档，再用 `cover` 写首条正文，再发布，再读回。首条正文必须用 `cover`，不要用 `append`——`create-mode empty` 会留一张含空段落的空卡片，`append` 会在其后另起新卡片，导致正文上方多出一张空白卡片；`cover` 一次性替换全部内容即可消除。后续追加小节才用 `append`。
 
+完整正式文档不要用 Markdown 原文写正文。Markdown 可以作为本地草稿或读回格式，但写入 KU 时要转换成编辑器 JSON 节点，再用 `edit-content --editor-mode cover` 覆盖全文。特别是表格：不能把 `|日期|进展|影响|` 这类 Markdown 表格行写进 `paragraph`，否则 KU 页面会直接显示管道符纯文本。
+
+错误示例（会显示成纯文本）：
+
+```json
+{"type":"paragraph","children":[{"text":"|日期|进展|影响|"}]}
+```
+
+正确示例（必须是真表格节点；完整列宽和 cell data 见下文表格 mock）：
+
+```json
+{"type":"table","data":{"headless":false,"width":[140,280,280]},"children":[{"type":"table-row","children":[{"type":"table-cell","data":{"rowspan":1,"colspan":1},"children":[{"type":"paragraph","children":[{"text":"日期"}]}]}]}]}
+```
+
 ```bash
 bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manage/bin/ku"; CREATE="$("$KU" create-doc --repo-id "<repositoryGuid>" --username "$SANDBOX_USERNAME" --title "文档标题" --create-mode empty --process-images=false)"; DOC_ID="$(printf "%s" "$CREATE" | sed -n "s/.*\"docGuid\": *\"\([^\"]*\)\".*/\1/p" | head -1)"; OPS='\''[{"mode":"cover","withNewCard":true,"json":[{"type":"paragraph","children":[{"text":"正文内容"}]}]}]'\''; "$KU" edit-content --doc-id "$DOC_ID" --username "$SANDBOX_USERNAME" --editor-mode cover --operations "$OPS"; "$KU" publish-doc --doc-id "$DOC_ID" --username "$SANDBOX_USERNAME"; "$KU" query-content --doc-id "$DOC_ID" --protocol markdown --show-doc-info'
 ```
@@ -90,7 +104,7 @@ bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manag
 bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manage/bin/ku"; OPS='\''[{"mode":"append","withNewCard":true,"json":[{"type":"heading","level":2,"children":[{"text":"新增小节"}]},{"type":"paragraph","children":[{"text":"新增正文。"}]}]}]'\''; "$KU" edit-content --doc-id "<docGuid>" --username "$SANDBOX_USERNAME" --editor-mode append --operations "$OPS"; "$KU" publish-doc --doc-id "<docGuid>" --username "$SANDBOX_USERNAME"; "$KU" query-content --doc-id "<docGuid>" --protocol markdown --show-doc-info'
 ```
 
-替换、删除、中间插入、改表格行：先 `query-content --protocol json` 备份并定位节点，再 `edit-content --editor-mode cover`，再 `publish-doc`，最后读回确认。不要把 `result.content[0]` 的标题节点写进正文 payload。
+替换、删除、中间插入、改表格行、完整文档重写：先 `query-content --protocol json` 备份并定位节点，再构造 KU 编辑器 JSON，用 `edit-content --editor-mode cover` 写回，再 `publish-doc`，最后读回确认。不要把 `result.content[0]` 的标题节点写进正文 payload。
 
 ## 附件和图片
 

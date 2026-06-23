@@ -11,12 +11,13 @@
 - 不要只看 shell 退出码；KU API 错误可能仍退出码为 0，要检查输出 JSON 的 `success`、`status`、`returnCode`。
 - `query-content --protocol markdown` 的正文通常在 `result.text`；`query-content --protocol json` 的正文通常在 `result.content`。
 - 评论不在正文 JSON 中，必须用 `query-comments` 单独读取。
-- `create-doc --content` 不是稳定正文写入路径；稳定创建正文流程是 `create-doc --create-mode empty` -> `edit-content append` -> `publish-doc` -> `query-content` 读回。
+- `create-doc --content` / `create-doc --md-file` 不是稳定正文写入路径；稳定创建正文流程是 `create-doc --create-mode empty` -> 把正文转换成 KU 编辑器 JSON 节点 -> `edit-content --editor-mode cover` -> `publish-doc` -> `query-content` 读回。
 - `edit-content` 后必须 `publish-doc`，否则修改可能只停留在草稿。
-- `append` 用于新增小节、追加总结、追加表格、追加图片；替换、删除、中间插入、修改表格行必须读 JSON 后定位并 `cover`。
+- `append` 只用于已有文档的新增小节、追加总结、追加图片等小范围增量；新建文档首条正文、完整正式文档写回、替换、删除、中间插入、修改表格行必须读/构造 JSON 后定位并 `cover`。
 - `cover` 前保存备份；只修改目标节点，保留无关节点。`result.content[0]` 常是标题节点，覆盖正文时不要写进正文 payload，避免标题重复。
 - 图片先 `upload-attachment` 到目标文档，再用目标文档自己的 `attachId` 生成图片地址：`https://rte.weiyun.baidu.com/wiki/attach/image/api/imageDownloadAddress?attachId=<attachId>&docGuid=<docGuid>`。
-- 表格要写 KU `table` 节点，不要退化成代码块。`table.data.width` 控制列宽，表头灰底要给首行每个 `table-cell.data.backgroundColor` 写 `rgb(231, 230, 230)`。
+- Markdown 是读回/草稿格式，不是正式写回格式。正式文档必须把标题、段落、列表、表格、代码块、图片转换成 KU 编辑器 JSON 节点；不要把 Markdown 原文塞进 `paragraph` 或 `block-code` 当正文。
+- 表格要写 KU `table` 节点，不要退化成代码块，也不要写成 Markdown 管道符文本。`table.data.width` 控制列宽，表头灰底要给首行每个 `table-cell.data.backgroundColor` 写 `rgb(231, 230, 230)`。
 
 ## 内容要求
 
@@ -42,7 +43,7 @@
 ## 呈现要求
 
 - 表格列宽按每列内容的平均字数占比分配；文本多的列更宽，文本少的列更窄，但每列都要保留可读的最低宽度，不要使用固定总宽或固定魔法数。
-- Markdown 表格每行列数必须一致；单元格压缩只用于“与上一行相同”的情况：短语、元素、原因、输入类列可写 `-`，属性、说明、结果、影响等论述类列可写 `同上`；真实缺失的信息按语义写明“待补充”“无”或留给用户确认，避免行尾紧贴 `||`。
+- Markdown 表格在本地撰稿时每行列数必须一致；写入 KU 前必须转换成 `table/table-row/table-cell` 节点。单元格压缩只用于“与上一行相同”的情况：短语、元素、原因、输入类列可写 `-`，属性、说明、结果、影响等论述类列可写 `同上`；真实缺失的信息按语义写明“待补充”“无”或留给用户确认，避免行尾紧贴 `||`。
 - 不要出现 `备注 | 备注 | ...` 这种无信息重复列，改成 `概要`、`规则`、`影响`、`处理方式` 等具体字段。
 - 中文段落不要用多个空格制造视觉间隔；用标点、换行、列表或表格列。
 - HTML demo 需要进 KU 时，先截图成 PNG 再插入 image；HTML、Excel、PDF、ZIP 更适合附件卡片。
