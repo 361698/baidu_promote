@@ -1,57 +1,53 @@
 # ku-doc-manage experiment
 
-## 写入模型
+## 定位
 
-- KU 普通文档可用编辑器 JSON 表达，但 `markdown` 和 `json` 读取的组织方式不同。
-- `query-content --protocol markdown` 的正文通常在 `result.text`。
-- `query-content --protocol json` 的正文通常在 `result.content`。
-- 评论不在正文 JSON 中，用 `query-comments` 单独读取。
+`ku-doc-manage` 负责 KU/如流知识库文档的读取、创建、编辑、发布、评论、权限、附件、在线表格和数据表操作。本文沉淀可复用的传参、写作、编辑、验证经验。
 
-## 创建正文
+## 传参要求
 
-- 不要把 `create-doc --content` 当作最稳正文写入路径；自动化场景可能只创建标题或把正文落到元数据。
-- 稳定流程：`create-doc --create-mode empty` -> `edit-content append` -> `publish-doc` -> `query-content` 读回。
+- KU 普通文档 URL 最后一段是 `docGuid`，倒数第二段是 `repositoryGuid`。
+- 每条 KU 命令都要在实际子进程环境里设置 `SANDBOX_USERNAME=<uuap>`；只传 `--username` 不够，包装器仍可能认证失败。
+- 不要只看 shell 退出码；KU API 错误可能仍退出码为 0，要检查输出 JSON 的 `success`、`status`、`returnCode`。
+- `query-content --protocol markdown` 的正文通常在 `result.text`；`query-content --protocol json` 的正文通常在 `result.content`。
+- 评论不在正文 JSON 中，必须用 `query-comments` 单独读取。
+- `create-doc --content` 不是稳定正文写入路径；稳定创建正文流程是 `create-doc --create-mode empty` -> `edit-content append` -> `publish-doc` -> `query-content` 读回。
+- `edit-content` 后必须 `publish-doc`，否则修改可能只停留在草稿。
+- `append` 用于新增小节、追加总结、追加表格、追加图片；替换、删除、中间插入、修改表格行必须读 JSON 后定位并 `cover`。
+- `cover` 前保存备份；只修改目标节点，保留无关节点。`result.content[0]` 常是标题节点，覆盖正文时不要写进正文 payload，避免标题重复。
+- 图片先 `upload-attachment` 到目标文档，再用目标文档自己的 `attachId` 生成图片地址：`https://rte.weiyun.baidu.com/wiki/attach/image/api/imageDownloadAddress?attachId=<attachId>&docGuid=<docGuid>`。
+- 表格要写 KU `table` 节点，不要退化成代码块。`table.data.width` 控制列宽，表头灰底要给首行每个 `table-cell.data.backgroundColor` 写 `rgb(231, 230, 230)`。
 
-## append / cover
+## 内容要求
 
-- 默认用 `append`：新增小节、补充总结、追加表格、追加图片。
-- 替换原文、删除内容、插入到某标题下、修改表格行，必须读 JSON 后定位，使用 `cover`。
-- `cover` 前保存备份；只改目标节点；保留无关节点。
-- `result.content[0]` 常是标题节点，覆盖正文时不要写入这个节点，避免标题重复出现在正文。
-- `edit-content` 后必须 `publish-doc`，否则修改可能停留在草稿。
-- `SANDBOX_USERNAME` 必须在实际 KU 子进程环境里设置。只传 `--username` 仍可能触发包装器认证提示或返回开放应用认证错误。
-- 自动化脚本不要只看 shell 退出码；KU API 错误可能仍退出码为 0，要检查 JSON 的 `success/status/returnCode`。
+- 只写能帮助决策的信息，不要为了像 PRD 而堆章节。信息量不够时，保留背景、目标、方案、关键规则、待讨论即可。
+- 分清“已确定”和“待讨论”。用户明确给出的方案、约束、口径写进正文方案区；没定的内容放入“待讨论”，不要替用户拍板。
+- 结论先行，但结论要是可判断的句子，不要只是标签。例如“按月清零会浪费低峰、卡住高峰”比“周期波动”更有用。
+- 展开句只解释当前结论，不另起新观点；避免一段里塞多个判断。
+- 表格列数服务决策问题，能三列讲清楚就不要扩成六列。用户要求压成三列时，通常是在提醒合并辅助说明。
+- 涉及分位数、日均值、覆盖天数、渗透率、风险阈值时，先定义口径，再放推算；口径表和推算表分开更清楚。
+- 用产品文档语气：直接、可判断、不过度口语。推荐“权益清晰”“价格策略要有弹性”“高频风险要可控”；避免“买到了什么”“快速救急”“别人权益”。
+- 用户说“太通俗”时，优先把口语词换成产品词；用户说“太死板”时，优先把抽象标签换成判断句。
+- 不确定的事实写“待确认”，不要把推测写成事实。
+- 不要补用户没有给过的竞品、指标、风险、流程；除非它确实支持判断，且能标注为待确认。
 
-## 定位策略
+## 呈现要求
 
-- 优先用标题文本、段落关键短语、表格行文本定位。
-- 可结合 `blockId`，但不要只依赖一次观察到的结构。
-- 写回后用 markdown 和 json 双读回，确认旧内容消失，新内容在目标位置。
+- 表格列宽建议总宽约 `1260`；序号列 `60-90`，普通文本列 `180-320`，图片列 `520-820`。
+- Markdown 表格每行列数必须一致；空单元格统一写 `-`，不要留空；避免行尾紧贴 `||`。
+- 不要出现 `备注 | 备注 | ...` 这种无信息重复列，改成 `概要`、`规则`、`影响`、`处理方式` 等具体字段。
+- 中文段落不要用多个空格制造视觉间隔；用标点、换行、列表或表格列。
+- HTML demo 需要进 KU 时，先截图成 PNG 再插入 image；HTML、Excel、PDF、ZIP 更适合附件卡片。
+- Mermaid 在 KU 中通常表现为 `block-code` + `language:"mermaid"`，不保证直接渲染；需要可视化时优先导出图片再插入。
 
-## 表格
+## 验证与沉淀
 
-- 表格要写 KU `table` 节点，不要退化成代码块。
-- `table.data.width` 控制列宽。
-- 总宽建议约 `1260`；序号列 `60-90`；普通文本列 `180-320`；图片列 `520-820`。
-- 表头灰底要给首行每个 `table-cell.data.backgroundColor` 写入灰色，不要以为 `headless:false` 会自动处理。
+- 写完必须读回 Markdown 和 JSON：确认发布成功、正文可见、表格是 `table/table-row/table-cell`、图片使用目标文档 `attachId`。
+- 替换类任务要确认旧词消失、新词出现在原位置；不要用追加“生效口径”小节糊过去。
+- 用户纠正结构、语气、表格、范围或判断方式时，判断是否可复用；可复用则更新本文，单次业务事实不要沉淀。
 
-## 图片和附件
-
-- 图片先 `upload-attachment` 到目标文档，再用目标文档自己的 `attachId` 生成图片地址。
-- 图片节点的 `src` 稳定格式：`https://rte.weiyun.baidu.com/wiki/attach/image/api/imageDownloadAddress?attachId=<attachId>&docGuid=<docGuid>`。
-- 跨文档搬图时不要直接复用源文档图片 URL。
-- HTML demo 先截图成 PNG，再上传并作为 image 节点插入。
-- HTML、Excel、PDF、ZIP 更适合附件卡片。
-
-## 写作偏好
-
-- 产品/需求文档要结论先行，分清“已确定”和“待讨论”。
-- 不要为了像 PRD 而堆章节；只写能帮助决策的信息。
-- 表格列数服务问题复杂度，能三列讲清楚就不要扩成六列。
-- 不确定时写“待确认”，不要把推测写成事实。
-
-## 安全
+## 安全边界
 
 - 不把 UGate token、Bearer token、AK/SK、真实业务链接写入本文。
 - 示例用 mock 占位。
-- 用户指出可复用的格式或风格问题时，更新本文；只针对单个文档的事实不要沉淀。
+- 删除文档、移动文档、修改权限前必须二次确认。
