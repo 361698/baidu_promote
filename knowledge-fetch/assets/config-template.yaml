@@ -1,0 +1,16 @@
+version: "1.0"
+
+meta:
+  projectId: "PLACEHOLDER_PROJECT_ID"
+  version: "1.0.0"
+  description: "PLACEHOLDER_DESCRIPTION"
+  owner: "PLACEHOLDER_OWNER"
+
+storage:
+  basePath: "~/knowledge"
+
+sources:
+  # Add knowledge sources here
+
+entrypoint:
+  type: "rule"
