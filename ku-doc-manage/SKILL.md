@@ -223,24 +223,57 @@ view-id: viwAl8ytdFV2R  (下划线后的部分)
 
 ## 认证说明
 
-CLI 工具默认使用自动降级模式（个人身份认证 → 数字员工身份认证），无需额外配置。
+**单一鉴权链路：只用本机 UGate token，不要走数字员工 / OpenAPI / 自动降级。**
 
-**环境变量要求**：必须设置 `SANDBOX_USERNAME` 或 `BAIDU_CC_USERNAME`（用于确定当前用户身份和 token 文件路径）。
+KU CLI 读取本机 UGate 缓存文件：
+
+```text
+~/.config/uuap/.eac_ugate_token_<uuap>
+```
+
+`<uuap>` 取自 `SANDBOX_USERNAME`（或 `BAIDU_CC_USERNAME`）。这两个环境变量必须设在真正执行 KU 子进程的那一层 shell 里；只传 `--username` 不够，缓存文件名靠环境变量定位。读写用同一个人身份，不存在“个人读不了就切机器人”的降级——切了反而会把可写的个人身份换成只读的机器人身份，导致创建/编辑被拒。
+
+首次使用或 token 失效时，引导用户在本机普通浏览器打开：
+
+```text
+https://uuap.baidu.com/agent/token
+```
+
+如果页面没有 `ugate token: ...`，先让用户过百度网关/SSO 再刷新。等用户明确说“已复制”或直接给出 token 后，再运行本地脚本缓存（脚本只读一次，不要让它空等剪贴板，也不要复述/落盘完整 token）：
 
 ```bash
-# 示例
+# 用户复制到剪贴板
+bash "$SKILL_DIR/scripts/cache-ugate-token.sh" "<uuap>"
+# 纯终端/沙箱或用户已在聊天里贴出 token，用 stdin
+bash "$SKILL_DIR/scripts/cache-ugate-token.sh" "<uuap>" --stdin
+```
+
+运行前自检（确认工具文件与缓存就绪）：
+
+```bash
+SANDBOX_USERNAME="<uuap>" bash "$SKILL_DIR/scripts/check-deps.sh"
+```
+
+正常调用示例：
+
+```bash
+export SANDBOX_USERNAME="<uuap>"
 $SKILL_DIR/bin/ku query-content --doc-id WKoT7ltTnjU1oW
 ```
 
-## 错误处理
+## 编辑/创建失败的排查
 
-| 错误 | 处理策略 |
-|------|---------|
-| 参数缺失 / ID 格式错误 | 自行修正后重试 |
-| 401 / 403 认证失败 | 提示用户重新触发 ugate-auth 认证流程，勿重试 |
-| 404 文档不存在 | 告知用户文档可能已被删除，勿重试 |
-| 无操作权限 | 告知用户联系知识库管理员，勿重试 |
-| 5xx 服务端错误 | 告知用户稍后再试，勿重试 |
+KU API 报错经常被误判成“认证失败”，从而错误地去切身份或重做认证。先按下表对症，**不要一遇到失败就重新认证或换数字员工**。注意很多 API 错误 shell 退出码仍是 0，要看输出 JSON 的 `success`/`status`/`returnCode`。
+
+| 现象 | 真实原因 | 处理 |
+|------|---------|------|
+| 提示认证失败 / 走到认证提示，但缓存文件存在 | `SANDBOX_USERNAME` 没进到执行命令的子进程 | 在同一行 `export SANDBOX_USERNAME=<uuap>` 后再调用，别切身份、别重做认证 |
+| 真 401 / 403 | 本机 UGate token 失效 | 重新缓存 token（上面的脚本），仍只用个人 UGate，不要降级到机器人 |
+| 创建/编辑/发布被拒、`canUpdate=false`、无权限 | 不是认证问题，是对该知识库没写权限（多见于团队库/他人库） | 告知用户需要该库写权限；`--username` 不能提权，换库或让管理员加权限 |
+| `edit-content` 成功但页面看不到改动 | 只存了草稿 | 补跑 `publish-doc --doc-id <docId> --username <uuap>` |
+| 新建文档正文上方多出空白卡片 / 表格不渲染 | 首条正文用了 `append`，或 `table` 节点缺 `data` | 首条正文用 `cover`；表格写完整 `table` 节点（见 `route.md`），读回 JSON 核对 |
+| 404 文档不存在 | 文档已删或 ID 错 | 核对 ID/URL，勿反复重试 |
+| 5xx 服务端错误 | 服务端临时故障 | 稍后再试 |
 
 ## API 详细文档索引
 
