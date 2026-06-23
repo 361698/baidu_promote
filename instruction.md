@@ -13,7 +13,6 @@
 - UGate token 页面内容，或用户确认“已复制到剪贴板”。页面是 `https://uuap.baidu.com/agent/token`。如果页面没有显示 token，提醒用户先完成百度网关/SSO 登录并刷新。
 - onetool 个人 Token。只有安装或验收 `knowledge-fetch` 时需要；页面是 `https://console.cloud.baidu-int.com/onetool/auth-manage/my-services`，让用户点击“复制个人 Token”。
 - 如流群号。只有安装或验收 `knowledge-fetch` 时需要；如果用户没有可测群号，先跳过群聊拉取验收，并在最后说明。
-- 欢迎文档里的感谢对象和推荐加入的群聊信息。用户不提供时，感谢对象可用 UUAP，群聊信息可用用户提供的如流群号。
 
 话术可以简洁一点：
 
@@ -26,7 +25,6 @@
 3. 请打开 https://uuap.baidu.com/agent/token，复制页面内容；如果页面没有 token，先完成百度网关/SSO 登录并刷新。
 4. 如果要安装 knowledge-fetch，请打开 https://console.cloud.baidu-int.com/onetool/auth-manage/my-services，复制个人 Token。
 5. 如果要验收群聊拉取，请给一个可测试的如流群号，并确认 dodo 已在群里。
-6. 欢迎文档里要感谢谁、提示加入哪个群？如果不填，我会用你的 UUAP 和上面的群号。
 
 你可以一次性把这些信息发给我；token 也可以只复制到剪贴板后告诉我“已复制”。
 ```
