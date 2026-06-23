@@ -17,11 +17,23 @@ which knowbase
 knowbase login status
 ```
 
+如果 `knowbase` 不在 PATH，探测完整安装目录后直调：
+
+```bash
+if command -v knowbase >/dev/null 2>&1; then
+  KNOWBASE="$(command -v knowbase)"
+else
+  KNOWBASE="$(find "$HOME/.knowbase" -path '*/bin/knowbase' -type f 2>/dev/null | sort -V | tail -1)"
+fi
+test -n "$KNOWBASE" || { echo "knowbase not found"; exit 1; }
+DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" login status
+```
+
 临时使用 onetool 个人 Token：
 
 ```bash
 export COMATE_AUTH_TOKEN="<Bearer token>"
-knowbase login status
+"$KNOWBASE" login status
 ```
 
 运行结束后：
@@ -78,7 +90,7 @@ entrypoint:
 
 ```bash
 export COMATE_AUTH_TOKEN="<Bearer token>"
-knowbase -c /path/to/infoflow-group-message.yaml
+"$KNOWBASE" -c /path/to/infoflow-group-message.yaml
 unset COMATE_AUTH_TOKEN
 ```
 
@@ -113,7 +125,7 @@ entrypoint:
 ```
 
 ```bash
-knowbase -c /path/to/repo.yaml
+"$KNOWBASE" -c /path/to/repo.yaml
 ```
 
 ## 维护

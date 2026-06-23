@@ -141,6 +141,18 @@ SANDBOX_USERNAME="<uuap>" python3 scripts/ku_search.py --word "测试关键词" 
 
 如果安装脚本因为缺少 `wget` 失败，先补齐 `wget`，或使用已安装的完整 knowbase 目录。不要只拷贝单个 `bin/knowbase`，它运行时还依赖旁边的版本文件。
 
+如果 `knowbase` 不在 PATH，不要立即判定未安装。先探测本机是否已有完整目录，并用绝对路径直调：
+
+```bash
+if command -v knowbase >/dev/null 2>&1; then
+  KNOWBASE="$(command -v knowbase)"
+else
+  KNOWBASE="$(find "$HOME/.knowbase" -path '*/bin/knowbase' -type f 2>/dev/null | sort -V | tail -1)"
+fi
+test -n "$KNOWBASE" || { echo "knowbase not found"; exit 1; }
+DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" login status
+```
+
 让用户打开：
 
 ```text
@@ -151,7 +163,7 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 ```bash
 export COMATE_AUTH_TOKEN="<用户复制的Bearer token>"
-knowbase login status
+"$KNOWBASE" login status
 ```
 
 运行完成后：
