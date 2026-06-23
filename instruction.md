@@ -1,13 +1,34 @@
 # baidu_promote 安装与验收指令
 
-## 1. 先问用户安装范围
+## 1. 开头一次性收集信息
 
-先问用户希望安装哪些 skill，并推荐默认全装。话术可以简洁一点：
+开始安装前，先一次性问清用户需要补充的信息，不要一边输出安装结果一边继续追问下一步。这样用户能把准备工作一次做完，后续 agent 只负责执行、校验和汇总。
+
+如果当前 agent 环境提供“反问”“表单”“request user input”之类的用户输入入口，优先用这个入口在开头一次性收集；没有这种入口时，用普通对话一次性列出问题。
+
+需要一次性收集：
+
+- 希望安装哪些 skill。推荐默认全装：`ku-doc-manage`、`enterprise-search`、`get-ugate-token`、`knowledge-fetch`。
+- 百度 UUAP，也就是邮箱前缀，例如 `zhangsan`。
+- UGate token 页面内容，或用户确认“已复制到剪贴板”。页面是 `https://uuap.baidu.com/agent/token`。如果页面没有显示 token，提醒用户先完成百度网关/SSO 登录并刷新。
+- onetool 个人 Token。只有安装或验收 `knowledge-fetch` 时需要；页面是 `https://console.cloud.baidu-int.com/onetool/auth-manage/my-services`，让用户点击“复制个人 Token”。
+- 如流群号。只有安装或验收 `knowledge-fetch` 时需要；如果用户没有可测群号，先跳过群聊拉取验收，并在最后说明。
+- 欢迎文档里的感谢对象和推荐加入的群聊信息。用户不提供时，感谢对象可用 UUAP，群聊信息可用用户提供的如流群号。
+
+话术可以简洁一点：
 
 ```text
 我建议默认把四个都装上：ku-doc-manage、enterprise-search、get-ugate-token、knowledge-fetch。
 它们配合起来很有用：可以读写 KU/如流文档、创建和编辑文档、做企业内搜、搜人搜群、把群聊历史拉到本地。比如后续要做项目资料整理、根据群聊沉淀文档、找历史资料、把结果写回 KU，这几个会连成一条完整链路。
-你要全部安装，还是只安装其中几个？如果你没有特别偏好，我就按全部安装处理。
+为避免后面反复打断，我先一次性问齐：
+1. 你要全部安装，还是只安装其中几个？如果你没有特别偏好，我就按全部安装处理。
+2. 你的百度 UUAP 是什么？
+3. 请打开 https://uuap.baidu.com/agent/token，复制页面内容；如果页面没有 token，先完成百度网关/SSO 登录并刷新。
+4. 如果要安装 knowledge-fetch，请打开 https://console.cloud.baidu-int.com/onetool/auth-manage/my-services，复制个人 Token。
+5. 如果要验收群聊拉取，请给一个可测试的如流群号，并确认 dodo 已在群里。
+6. 欢迎文档里要感谢谁、提示加入哪个群？如果不填，我会用你的 UUAP 和上面的群号。
+
+你可以一次性把这些信息发给我；token 也可以只复制到剪贴板后告诉我“已复制”。
 ```
 
 如果用户没有明确选择，按“全部安装”执行。
@@ -56,7 +77,7 @@
 
 ### ③ UGate token 页面内容
 
-第一步：引导用户打开：
+第一步：优先使用开头一次性收集到的 UGate token 页面内容或剪贴板内容；如果缺失，再引导用户打开：
 
 ```text
 https://uuap.baidu.com/agent/token
@@ -66,7 +87,7 @@ https://uuap.baidu.com/agent/token
 
 第三步：用户可以把 token 页面内容发到聊天里，也可以复制到剪贴板后告诉 agent。agent 不要复述完整 token，不要把 token 写入仓库、文档或日志摘要。
 
-第四步：不要启动一个命令长时间等待用户输入。正确节奏是：先让用户打开页面并复制或发送 token，等用户回复后，再运行缓存动作。
+第四步：不要启动一个命令长时间等待用户输入。正确节奏是：开头先让用户打开页面并复制或发送 token，等用户回复后，再统一运行缓存动作。
 
 第五步：使用 `get-ugate-token` 完成 UGate 缓存，并确认本机出现对应的 UGate 缓存文件。
 
@@ -104,7 +125,7 @@ https://uuap.baidu.com/agent/token
 
 ### ⑧ onetool 个人 Token
 
-第一步：如果要拉如流群聊历史，优先让用户打开：
+第一步：如果要拉如流群聊历史，优先使用开头一次性收集到的 onetool 个人 Token；如果缺失，再让用户打开：
 
 ```text
 https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
@@ -118,7 +139,7 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 ### ⑨ 目标知识源的必要参数
 
-第一步：根据用户目标确认必要参数。例如群聊历史需要群号或可搜索到群号的线索，代码仓库需要仓库和分支，知识库文档需要 URL 或 docGuid。
+第一步：优先使用开头一次性收集到的必要参数。例如群聊历史需要群号或可搜索到群号的线索，代码仓库需要仓库和分支，知识库文档需要 URL 或 docGuid。
 
 第二步：如果参数能通过已安装 skill 搜到，先搜索再拉取，不要靠猜。
 
@@ -136,10 +157,13 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 ### `ku-doc-manage`
 
-- 在用户个人知识库创建一个标题为 `hello world` 的文档。
-- 正文写入：`本skill依赖onetool技能https://console.cloud.baidu-int.com/onetool/skills/1638、https://console.cloud.baidu-int.com/onetool/skills/154、https://console.cloud.baidu-int.com/onetool/skills/1433、dodo团队，请加入如流群聊13060869（该群暂未开启搜索，请联系潘英培）解锁更多玩法`。
-- 再给用户推荐一首闽南、粤语或国语老歌，并创建一个 2 列表格介绍这首老歌的历届演唱会：第一列是一句话介绍，第二列是图片。表格首行置灰。
-- 发布后读回，确认标题、正文、文档链接、表格和图片都存在。
+- 在用户个人知识库创建一篇欢迎文档。标题可以是 `欢迎使用 baidu_promote` 或用户指定标题。
+- 文档开头高亮感谢支持对象；感谢对象来自开头收集的信息，未提供时用用户 UUAP。
+- 文档中提示用户可以加入开头收集到的如流群聊；没有群号时写“可在后续补充群聊信息”，不要编造群号。
+- 下面给用户推荐一首闽南、粤语或国语老歌，并用自然、友好的方式介绍这首歌。
+- 必须通过互联网搜索获取与这首老歌演唱会相关的真实图片，再插入文档；不要使用 mock 图片、本机临时生成图片或无关占位图。
+- 用一个 2 列表格展示这首歌的演唱会内容：第一列是一句话介绍，第二列是互联网搜索到的演唱会图片。表格首行置灰。
+- 发布后读回，确认标题、正文、文档链接、表格和真实图片都存在。
 
 ### `enterprise-search`
 
@@ -149,8 +173,8 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 ### `knowledge-fetch`
 
-- 让用户选择一个可测试的如流群，并确认 `dodo` 已被拉进这个群。
-- 获取这个群的群号。
+- 使用开头收集到的可测试如流群号，并确认 `dodo` 已被拉进这个群。
+- 如果开头没有拿到群号，先跳过该验收项，并在最终结果中说明缺少群号。
 - 使用 knowbase 拉取这个群的一段群聊历史。
 - 验证本地生成知识使用说明文件和群聊 Markdown 文件；如果失败，返回明确的权限或认证错误。
 
