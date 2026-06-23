@@ -158,6 +158,6 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 如果读写失败是因为命令、路径、依赖、认证、参数不对，并且修正方式可复用，更新对应读写型 skill 的 `route.md`；`get-ugate-token` 这类纯缓存 skill 没有 `route.md`，直接更新 `SKILL.md` 或脚本。
 
-如果用户指出读写格式、写作风格、内容长短、表格结构、覆盖/追加策略、信息编造等问题，并且经验可复用，更新对应 skill 的 `experiment.md`。
+如果用户指出内容性质、格式、业务风格、写作方式、表格宽度、图片插入风格、文字风格、内容长短、表格结构、覆盖/追加策略、信息编造等问题，并且经验可复用，更新对应 skill 的 `experiment.md`。`route.md` 关注命令怎么跑通，`experiment.md` 关注内容和呈现怎么符合业务要求。
 
 不要把用户具体文档名、真实链接、真实群名、token、AK/SK 写进 `route.md` 或 `experiment.md`。需要示例时使用 mock 占位。

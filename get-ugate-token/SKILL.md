@@ -5,14 +5,8 @@ description: 获取并缓存 ugate token，供其他 skill 依赖使用进行API
 
 # get-ugate-token Skill
 
-## 首要提示
-
-- 本 skill 只负责获取、解析、缓存 UGate token，并可辅助管理 ugate/邮箱授权开关。
-- 不维护 `route.md` 或 `experiment.md`；缓存流程直接按本文件和 `getUgateToken.py` 执行。
-- 如果用户指出引导话术、缓存策略、隐私边界等可复用问题，直接更新本文件或脚本；不要写真实 token、AK/SK 或用户私密信息。
-
 ## 功能描述
-该 skill 用于获取并缓存 ugate token，供其他 skill 依赖使用进行API调用。支持多用户独立缓存，每个用户有独立的缓存文件。
+该 skill 只负责获取、解析、缓存 ugate token，供其他 skill 依赖使用进行 API 调用，并可辅助管理 ugate/邮箱授权开关。它不维护 `route.md` 或 `experiment.md`；缓存流程直接按本文件和 `getUgateToken.py` 执行。
 
 **核心特性：**
 - 所有 token 都是永久有效的
