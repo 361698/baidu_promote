@@ -120,15 +120,8 @@ view-id: viwAl8ytdFV2R  (下划线后的部分)
    ])
    ```
 
-6. **编辑模式选择**（执行 `edit-content` 时）：
-
-   | 用户意图关键词 | 编辑模式 | 说明 |
-   |--------------|---------|------|
-   | "追加"、"添加到末尾"、"新增内容" | `append` | 在文档末尾追加内容 |
-   | "覆盖"、"替换全文"、"重写整篇" | `cover` | 全文覆盖 |
-   | **其他所有情况**（默认） | `mdsl` | 局部编辑，精准修改指定内容 |
-
-   **默认使用 mdsl 局部编辑**：除非用户明确表达"追加"或"全文覆盖"意图，否则一律使用 `--editor-mode mdsl` 进行局部编辑。
+6. **编辑模式选择**（执行 `edit-content` 时）：默认 `mdsl` 局部编辑；用户明确"全文覆盖"用 `cover`，"追加小节"用 `append`。
+   **新建文档首条正文必须用 `cover`，不要用 `append`**（否则 `create-mode empty` 残留的空卡片会出现在正文上方）。**表格必须写完整 `table` 节点**（`data.width` 长度=列数、每个 `table-cell.data` 带 `rowspan/colspan:1`，否则 Web 端空白不渲染）。可运行配方与表格 mock 见 `route.md`。
 
 7. **执行命令**：`$SKILL_DIR/bin/ku <subcommand> [options]`
 
