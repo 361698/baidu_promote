@@ -1,243 +1,161 @@
 # baidu_promote 安装与验收指令
 
-本文是给 agent 看的执行指令，不是给用户看的教程。你的目标是在一台新电脑上，帮助用户尽快安装、打通并验收这些百度内部数据源读写 skill。
-
-仓库保留官方 skill 主体，只增加三类增强层：
-
-- `route.md`：最短命令表。需要读写数据时先从这里找命令。
-- `experiment.md`：可复用经验。需要处理格式、风格、覆盖/追加、表格、图片、摘要等问题时先看这里。
-- `SKILL.md`：原 skill 入口，只额外提示使用 `route.md` 和 `experiment.md`，不要把一次性测试题目写入 skill 本体。
-
 ## 1. 先问用户安装范围
 
 先问用户希望安装哪些 skill，并推荐默认全装。话术可以简洁一点：
 
 ```text
 我建议默认把四个都装上：ku-doc-manage、enterprise-search、get-ugate-token、knowledge-fetch。
-它们配合起来最有用：可以读写 KU/如流文档、创建和编辑文档、做企业内搜、搜人搜群、拉群聊历史到本地。比如你后续要做项目资料整理、根据群聊沉淀文档、找历史文档、把结果写回 KU，这几个会连成一条完整链路。
-你要全部安装，还是只安装其中几个？
+它们配合起来很有用：可以读写 KU/如流文档、创建和编辑文档、做企业内搜、搜人搜群、把群聊历史拉到本地。比如后续要做项目资料整理、根据群聊沉淀文档、找历史资料、把结果写回 KU，这几个会连成一条完整链路。
+你要全部安装，还是只安装其中几个？如果你没有特别偏好，我就按全部安装处理。
 ```
 
 如果用户没有明确选择，按“全部安装”执行。
 
-## 2. 安装 skill 文件夹
+## 2. 安装 skill
 
-Codex 默认安装到：
+按当前 agent 的 skill 安装方式安装用户选择的 skill。不要把整个 `baidu_promote` 仓库作为一层 skill 安装；要把下面这些 skill 目录分别直接放进当前 agent 的 skills 目录：
 
-```bash
-mkdir -p "$HOME/.codex/skills"
-cp -R /path/to/baidu_promote/ku-doc-manage "$HOME/.codex/skills/"
-cp -R /path/to/baidu_promote/enterprise-search "$HOME/.codex/skills/"
-cp -R /path/to/baidu_promote/get-ugate-token "$HOME/.codex/skills/"
-cp -R /path/to/baidu_promote/knowledge-fetch "$HOME/.codex/skills/"
-```
+- `ku-doc-manage`
+- `enterprise-search`
+- `get-ugate-token`
+- `knowledge-fetch`
 
-Claude Code 默认安装到：
+如果目标目录已经存在同名 skill，先备份同名目录，再安装新目录。安装后确认每个 skill 目录下至少有：
 
-```bash
-mkdir -p "$HOME/.claude/skills"
-cp -R /path/to/baidu_promote/ku-doc-manage "$HOME/.claude/skills/"
-cp -R /path/to/baidu_promote/enterprise-search "$HOME/.claude/skills/"
-cp -R /path/to/baidu_promote/get-ugate-token "$HOME/.claude/skills/"
-cp -R /path/to/baidu_promote/knowledge-fetch "$HOME/.claude/skills/"
-```
-
-从 GitHub 安装时，先 clone 仓库，再复制对应目录：
-
-```bash
-git clone git@github.com:361698/baidu_promote.git /tmp/baidu_promote
-mkdir -p "$HOME/.codex/skills"
-cp -R /tmp/baidu_promote/ku-doc-manage "$HOME/.codex/skills/"
-cp -R /tmp/baidu_promote/enterprise-search "$HOME/.codex/skills/"
-cp -R /tmp/baidu_promote/get-ugate-token "$HOME/.codex/skills/"
-cp -R /tmp/baidu_promote/knowledge-fetch "$HOME/.codex/skills/"
-```
-
-如果目标 skill 目录已存在，先备份再覆盖：
-
-```bash
-ts="$(date +%Y%m%d-%H%M%S)"
-for s in ku-doc-manage enterprise-search get-ugate-token knowledge-fetch; do
-  if [ -d "$HOME/.codex/skills/$s" ]; then
-    mv "$HOME/.codex/skills/$s" "$HOME/.codex/skills/$s.bak.$ts"
-  fi
-done
-```
+- `SKILL.md`
+- `route.md`
+- `experiment.md`
 
 ## 3. skill 与依赖矩阵
 
-| skill | 用途 | 必要依赖 | 可选依赖 |
-|---|---|---|---|
-| `get-ugate-token` | 缓存 UGate，供其他 skill 调百度内部接口 | Python3、用户 UUAP、UGate token 页面内容 | `aigate-cli` 授权开关 |
-| `ku-doc-manage` | KU/如流知识库文档读取、创建、编辑、发布、删除、评论、权限、附件、表格、数据表 | UGate 缓存、`SANDBOX_USERNAME`、`bin/ku` 可执行 | 平台二进制自动下载缓存 |
-| `enterprise-search` | 企业内搜、知识库搜索、搜人、搜群、会议、周报、OKR | Python3、UGate 缓存、`SANDBOX_USERNAME` | 无 |
-| `knowledge-fetch` | 拉 iCode、iCafe、iAPI、知识方舟、如流群聊历史到本地 | `knowbase` 客户端、`COMATE_AUTH_TOKEN` 或 knowbase UGate 登录 | `wget`，用于官方安装脚本 |
+| skill | 用途 | 依赖 |
+|---|---|---|
+| `get-ugate-token` | 缓存 UGate，供其他 skill 调百度内部接口 | ① Python3；② 用户 UUAP；③ UGate token 页面内容 |
+| `ku-doc-manage` | KU/如流知识库文档读取、创建、编辑、发布、删除、评论、权限、附件、表格、数据表 | ① UGate 缓存；② `SANDBOX_USERNAME`；③ KU CLI 可执行 |
+| `enterprise-search` | 企业内搜、知识库搜索、搜人、搜群、会议、周报、OKR | ① Python3；② UGate 缓存；③ `SANDBOX_USERNAME` |
+| `knowledge-fetch` | 拉 iCode、iCafe、iAPI、知识方舟、如流群聊历史到本地 | ① knowbase 客户端；② onetool 个人 Token 或 knowbase 本地登录；③ 目标知识源的必要参数 |
 
 ## 4. 按依赖完成打通
 
-### 4.1 询问 UUAP
+### ① Python3
 
-先问用户百度 UUAP，也就是邮箱前缀，例如 `zhangsan`。后续命令统一设置：
+第一步：检查当前机器是否能运行 Python3。
 
-```bash
-export SANDBOX_USERNAME="<uuap>"
-```
+第二步：如果 Python3 不可用，按当前系统的常规方式安装或切换到可用的 Python3。
 
-### 4.2 引导用户获取并缓存 UGate
+第三步：需要运行 Python 脚本的 skill，先用最小命令确认脚本能启动，再继续做真实请求。
 
-让用户打开：
+### ② 用户 UUAP
+
+第一步：询问用户百度 UUAP，也就是邮箱前缀，例如 `zhangsan`。
+
+第二步：后续所有 KU 和企业搜索命令都在实际子进程环境里设置 `SANDBOX_USERNAME=<uuap>`。
+
+第三步：不要只在说明里记录 UUAP，也不要只传 `--username` 后省略 `SANDBOX_USERNAME`，否则部分工具可能仍会认证失败。
+
+### ③ UGate token 页面内容
+
+第一步：引导用户打开：
 
 ```text
 https://uuap.baidu.com/agent/token
 ```
 
-说明要点：
+第二步：告诉用户如果页面没有显示 token，说明浏览器还没过百度网关/SSO，需要先完成登录，再刷新页面。
 
-- 如果页面没有显示 token，说明浏览器还没过百度网关/SSO，让用户先完成登录，再刷新页面。
-- 用户可以把 token 页面内容发到聊天里，也可以复制到剪贴板后告诉 agent。
-- agent 不要复述完整 token，不要把 token 写入仓库、文档或日志摘要。
-- 不要启动一个命令长时间等待用户输入。正确节奏是：先让用户打开页面并复制或发送 token，等用户回复后，再运行缓存命令。
+第三步：用户可以把 token 页面内容发到聊天里，也可以复制到剪贴板后告诉 agent。agent 不要复述完整 token，不要把 token 写入仓库、文档或日志摘要。
 
-缓存命令：
+第四步：不要启动一个命令长时间等待用户输入。正确节奏是：先让用户打开页面并复制或发送 token，等用户回复后，再运行缓存动作。
 
-```bash
-cd "$HOME/.codex/skills/get-ugate-token"
-USER_MESSAGE="ugate token: <用户复制的页面内容或纯JWT>" python3 getUgateToken.py "<uuap>"
-```
+第五步：使用 `get-ugate-token` 完成 UGate 缓存，并确认本机出现对应的 UGate 缓存文件。
 
-验证缓存文件：
+### ④ UGate 缓存
 
-```bash
-test -f "$HOME/.config/uuap/.eac_ugate_token_<uuap>" && echo "UGate cached"
-```
+第一步：确认本机已有当前 UUAP 的 UGate 缓存。
 
-### 4.3 打通 KU CLI
+第二步：如果没有，回到“③ UGate token 页面内容”完成缓存。
 
-```bash
-chmod +x "$HOME/.codex/skills/ku-doc-manage/bin/ku"
-SANDBOX_USERNAME="<uuap>" "$HOME/.codex/skills/ku-doc-manage/bin/ku" query-user-info --username "<uuap>"
-```
+第三步：需要 UGate 的 skill 在运行前都先确认当前命令带着正确的 `SANDBOX_USERNAME`。
 
-如果失败，先读 `ku-doc-manage/route.md`，修正路径、权限、认证或参数；可复用修正写回 `route.md`。
+### ⑤ KU CLI
 
-### 4.4 打通企业搜索
+第一步：确认 `ku-doc-manage` 已安装，并确认 KU CLI 可执行。
 
-```bash
-cd "$HOME/.codex/skills/enterprise-search"
-SANDBOX_USERNAME="<uuap>" python3 scripts/ku_search.py --word "测试关键词" --page 1 --page-size 5
-```
+第二步：用 `ku-doc-manage` 查询当前用户信息，确认能拿到用户信息和个人知识库信息。
 
-如果失败，先读 `enterprise-search/route.md`；可复用修正写回 `route.md`。
+第三步：如果失败，先读 `ku-doc-manage/route.md`，修正路径、权限、认证或参数；可复用修正写回 `route.md`。
 
-### 4.5 打通 knowbase
+### ⑥ 企业搜索脚本
 
-`knowledge-fetch` 用于把知识源拉到本地，尤其是如流群聊历史。
+第一步：确认 `enterprise-search` 已安装。
 
-安装：
+第二步：用一个普通关键词跑一次知识库搜索或企业内搜，确认能返回结构化结果。
 
-```bash
-/bin/bash -c "$(curl -fsSL http://knowbase-client.bj.bcebos.com/knowbase/install.sh)"
-```
+第三步：如果失败，先读 `enterprise-search/route.md`；可复用修正写回 `route.md`。
 
-如果安装脚本因为缺少 `wget` 失败，先补齐 `wget`，或使用已安装的完整 knowbase 目录。不要只拷贝单个 `bin/knowbase`，它运行时还依赖旁边的版本文件。
+### ⑦ knowbase 客户端
 
-如果 `knowbase` 不在 PATH，不要立即判定未安装。先探测本机是否已有完整目录，并用绝对路径直调：
+第一步：检查本机是否已有 `knowbase`。如果命令不在 PATH，不要立即判定未安装；先探测用户目录下是否有完整 knowbase 安装目录，并优先用完整路径直调。
 
-```bash
-if command -v knowbase >/dev/null 2>&1; then
-  KNOWBASE="$(command -v knowbase)"
-else
-  KNOWBASE="$(find "$HOME/.knowbase" -path '*/bin/knowbase' -type f 2>/dev/null | sort -V | tail -1)"
-fi
-test -n "$KNOWBASE" || { echo "knowbase not found"; exit 1; }
-DISABLE_KNOWBASE_UPDATE=1 "$KNOWBASE" login status
-```
+第二步：如果没有完整 knowbase，按官方安装方式安装。若安装脚本因为缺少 `wget` 失败，先补齐 `wget`，或安装完整 knowbase 目录。不要只拷贝单个 `bin/knowbase`，它运行时还依赖旁边的版本文件。
 
-让用户打开：
+第三步：确认 `knowbase login status` 能运行，并能识别当前认证状态。
+
+### ⑧ onetool 个人 Token 或 knowbase 本地登录
+
+第一步：如果要拉如流群聊历史，优先让用户打开：
 
 ```text
 https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 ```
 
-让用户点击“复制个人 Token”，然后 agent 在当前 shell 临时设置：
+第二步：让用户点击“复制个人 Token”，并只在当前 shell 临时设置为 `COMATE_AUTH_TOKEN`。
 
-```bash
-export COMATE_AUTH_TOKEN="<用户复制的Bearer token>"
-"$KNOWBASE" login status
-```
+第三步：用 knowbase 检查认证状态。
 
-运行完成后：
+第四步：运行结束后清理当前 shell 里的 `COMATE_AUTH_TOKEN`。
 
-```bash
-unset COMATE_AUTH_TOKEN
-```
+第五步：如果用户不提供 onetool token，也可以尝试 knowbase 本地登录；但群聊历史拉取是否可用，以实测返回为准。
+
+### ⑨ 目标知识源的必要参数
+
+第一步：根据用户目标确认必要参数。例如群聊历史需要群号或可搜索到群号的线索，代码仓库需要仓库和分支，知识库文档需要 URL 或 docGuid。
+
+第二步：如果参数能通过已安装 skill 搜到，先搜索再拉取，不要靠猜。
+
+第三步：如果权限不足，把错误原因简洁告诉用户，并说明需要用户补充权限、加入群、添加机器人或更换 token。
 
 ## 5. 最小验收用例
 
-这些用例只用于新电脑安装后的验收，不要写进各 skill 的 `SKILL.md`。执行时如果用户只想验收部分能力，就只做对应部分。
+做完后，请按照用户安装的 skill 选择下面测试用例。
 
-### 5.1 KU 创建、读取、编辑、发布
+### `get-ugate-token`
 
-目标：在用户个人知识库创建一个标题为 `hello world` 的文档，正文写一句验收说明，读回确认标题、正文、链接。
+- 让用户提供 UUAP，并引导用户打开 UGate token 页面。
+- 等用户复制或发送 token 后，由 agent 完成本机缓存。
+- 验证当前 UUAP 的 UGate 缓存已存在。
 
-执行方式：读 `ku-doc-manage/route.md`，使用稳定流程：
+### `ku-doc-manage`
 
-1. `query-user-info` 拿个人知识库 ID。
-2. `create-doc --create-mode empty` 创建空文档。
-3. `edit-content --editor-mode append` 写正文。
-4. `publish-doc` 发布。
-5. `query-content --protocol markdown --show-doc-info` 读回。
+- 在用户个人知识库创建一个标题为 `hello world` 的文档，正文写清楚这是新电脑 agent 自动创建的测试文档。
+- 读取这个 `hello world` 文档，确认能读回标题、正文和文档链接。
+- 在这个文档里追加一个表格：随机选择一首闽南、粤语或国语老歌，并用表格做简短介绍；要求表格首行置灰。
+- 给这个文档插入一张图片，图片可以是本机临时生成的简单封面图，也可以是用户提供的图片。
+- 发布后再次读回，确认正文、表格和图片都存在。
 
-### 5.2 企业搜索搜到刚创建的文档
+### `enterprise-search`
 
-目标：用 `enterprise-search` 搜索 `hello world`，确认能返回刚创建的 KU 文档或至少能返回相关搜索结果。
+- 用知识库搜索检索 `hello world`，确认能搜到刚创建的测试文档或相关结果。
+- 用企业内搜检索一个普通关键词，确认能返回结构化搜索结果。
+- 如果用户愿意测试搜群，用一个群名或成员名线索搜索群，确认能拿到群号。
 
-执行方式：读 `enterprise-search/route.md`，优先使用：
+### `knowledge-fetch`
 
-```bash
-SANDBOX_USERNAME="<uuap>" python3 scripts/ku_search.py --word "hello world" --page 1 --page-size 10
-```
-
-### 5.3 下载/读取这个文档
-
-目标：用 KU 文档链接或 `docGuid` 再读一次刚创建的文档，确认可下载/可读取为 Markdown 和 JSON。
-
-执行方式：读 `ku-doc-manage/route.md`，分别跑：
-
-```bash
-"$HOME/.codex/skills/ku-doc-manage/bin/ku" query-content --url "<hello-world-url>" --protocol markdown --show-doc-info
-"$HOME/.codex/skills/ku-doc-manage/bin/ku" query-content --url "<hello-world-url>" --protocol json --show-doc-info
-```
-
-### 5.4 添加表格，首行置灰
-
-目标：在刚创建的文档里追加一个表格，主题随机选择一首闽南、粤语或国语老歌并做简短介绍。表格首行置灰。
-
-执行方式：读 `ku-doc-manage/experiment.md` 和 `ku-doc-manage/references/edit_content.md`，使用 `edit-content --editor-mode append` 追加 KU `table` 节点，再 `publish-doc`，最后读回确认表格存在。
-
-### 5.5 插入图片
-
-目标：给同一篇验收文档插入一张图片。图片可以是本机临时生成的简单封面图或用户提供的图片。
-
-执行方式：读 `ku-doc-manage/route.md` 的附件和图片部分。先 `upload-attachment`，再把返回的 `attachId` 组装成 image 节点，追加后发布并读回确认。
-
-### 5.6 如流群聊历史获取
-
-目标：验证 `knowledge-fetch` 能拉如流群聊历史。
-
-先让用户选择一个可测试群，并把 `dodo` 拉进这个群。让用户提供群号，或用 `enterprise-search` 的搜群能力找 `gid`。
-
-执行方式：读 `knowledge-fetch/route.md`，生成 `infoflow_group_message` 配置，设置 `COMATE_AUTH_TOKEN` 后运行：
-
-```bash
-knowbase -c /path/to/infoflow-group-message.yaml
-```
-
-验收输出：
-
-- 本地生成 `knowledge_usage_readme.md`。
-- 本地生成 `infoflow_group_message/...md`。
-- 能看到目标时间范围内的群聊内容或明确的权限错误。
+- 让用户选择一个可测试的如流群，并确认 `dodo` 已被拉进这个群。
+- 获取这个群的群号。
+- 使用 knowbase 拉取这个群的一段群聊历史。
+- 验证本地生成知识使用说明文件和群聊 Markdown 文件；如果失败，返回明确的权限或认证错误。
 
 ## 6. 维护规则
 
