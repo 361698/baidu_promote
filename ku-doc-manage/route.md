@@ -9,6 +9,10 @@ export KU="$SKILL/bin/ku"
 chmod +x "$KU"
 ```
 
+注意：`SANDBOX_USERNAME` 必须在实际执行 KU 子进程的环境里存在。不要只在外层说明里写 username，也不要只传 `--username` 参数后省略环境变量；否则包装器可能仍会进入认证提示或返回开放应用认证错误。
+
+KU CLI 有些 API 错误可能仍以 shell 退出码 `0` 返回。自动化验收时必须检查输出 JSON 里的 `success`、`status`、`returnCode`，不要只看命令退出码。
+
 如已知本机有对应平台二进制，也可以把 `KU` 改成 `"$SKILL/bin/ku-darwin-arm64"` 等直调路径。
 
 ## 文档读取
@@ -76,6 +80,15 @@ bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manag
 ```
 
 图片节点、表格节点、附件卡片结构见 `experiment.md` 和 `references/edit_content.md`。
+
+图片插入最短稳定格式：
+
+```text
+先 upload-attachment 拿 attachId，再把 image.src 写成：
+https://rte.weiyun.baidu.com/wiki/attach/image/api/imageDownloadAddress?attachId=<attachId>&docGuid=<docGuid>
+```
+
+表格首行置灰：给首行每个 `table-cell.data.backgroundColor` 写 `rgb(231, 230, 230)`。
 
 ## 高风险操作
 

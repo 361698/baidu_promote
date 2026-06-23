@@ -19,6 +19,8 @@
 - `cover` 前保存备份；只改目标节点；保留无关节点。
 - `result.content[0]` 常是标题节点，覆盖正文时不要写入这个节点，避免标题重复出现在正文。
 - `edit-content` 后必须 `publish-doc`，否则修改可能停留在草稿。
+- `SANDBOX_USERNAME` 必须在实际 KU 子进程环境里设置。只传 `--username` 仍可能触发包装器认证提示或返回开放应用认证错误。
+- 自动化脚本不要只看 shell 退出码；KU API 错误可能仍退出码为 0，要检查 JSON 的 `success/status/returnCode`。
 
 ## 定位策略
 
@@ -36,6 +38,7 @@
 ## 图片和附件
 
 - 图片先 `upload-attachment` 到目标文档，再用目标文档自己的 `attachId` 生成图片地址。
+- 图片节点的 `src` 稳定格式：`https://rte.weiyun.baidu.com/wiki/attach/image/api/imageDownloadAddress?attachId=<attachId>&docGuid=<docGuid>`。
 - 跨文档搬图时不要直接复用源文档图片 URL。
 - HTML demo 先截图成 PNG，再上传并作为 image 节点插入。
 - HTML、Excel、PDF、ZIP 更适合附件卡片。
