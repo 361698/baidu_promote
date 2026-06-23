@@ -24,9 +24,8 @@
 如果目标目录已经存在同名 skill，先备份同名目录，再安装新目录。安装后确认每个 skill 目录下至少有：
 
 - `SKILL.md`
-- `route.md`
 
-其中 `ku-doc-manage`、`enterprise-search`、`knowledge-fetch` 需要有 `experiment.md`；`get-ugate-token` 只负责缓存 token，不强制保留 `experiment.md`。
+其中 `ku-doc-manage`、`enterprise-search`、`knowledge-fetch` 需要有 `route.md` 和 `experiment.md`；`get-ugate-token` 只负责缓存 token，不需要 `route.md` 或 `experiment.md`。
 
 ## 3. skill 与依赖矩阵
 
@@ -157,7 +156,7 @@ https://console.cloud.baidu-int.com/onetool/auth-manage/my-services
 
 ## 6. 维护规则
 
-如果读写失败是因为命令、路径、依赖、认证、参数不对，并且修正方式可复用，更新对应 skill 的 `route.md`。
+如果读写失败是因为命令、路径、依赖、认证、参数不对，并且修正方式可复用，更新对应读写型 skill 的 `route.md`；`get-ugate-token` 这类纯缓存 skill 没有 `route.md`，直接更新 `SKILL.md` 或脚本。
 
 如果用户指出读写格式、写作风格、内容长短、表格结构、覆盖/追加策略、信息编造等问题，并且经验可复用，更新对应 skill 的 `experiment.md`。
 
