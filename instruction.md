@@ -33,6 +33,29 @@
 
 ## 2. 安装 skill
 
+### 2.0 先判断：普通版还是沙箱版（决定鉴权怎么装）
+
+仓库有两套鉴权方式，按 agent 自身运行环境二选一：
+
+- **普通版**：跑在普通终端 / 桌面 CLI，`$HOME` 跨会话稳定。直接装仓库顶层的 skill 目录即可，token 用 `get-ugate-token` 缓存一次就能反复用。
+- **沙箱版**：跑在沙箱 / 隔离工作区（如 DuMate、千帆桌面工作区），每个会话 `$HOME` 可能变、`$HOME` 路径里含 `qianfan_desk_xdg/<workspace>` 或 `.dumate/`、或者“上次缓存过 token 这次却读不到”。这种情况下，token 存在 `$HOME` 里下个会话就丢，必须用沙箱版的“持久仓库 + 每次会话 hydrate”。
+
+判断方法：看 `echo "$HOME"` 是否含上述沙箱路径特征，或 agent 是否明确跑在 DuMate / 千帆桌面这类环境。判断不了就问用户一句“你是不是在 DuMate / 千帆桌面这类沙箱里跑？”；默认按普通版装，若之后某个会话读不到已缓存的 token，再切沙箱版。
+
+**普通版怎么装**：按下面 2.1 装仓库顶层的 skill 目录，鉴权按第 4 节 ③④ 走（`get-ugate-token` 缓存一次）。
+
+**沙箱版怎么装**：照常按 2.1 装仓库顶层 skill 目录（主版提供 `bin/ku`、写回配方、搜索脚本等共享内容，沙箱不重复），**额外**把 `sandbox/` 下对应目录装成带 `-sandbox` 后缀的 skill：
+
+| 仓库目录 | 装成 skill 名 |
+|---|---|
+| `sandbox/ku-doc-manage` | `ku-doc-manage-sandbox` |
+| `sandbox/enterprise-search` | `enterprise-search-sandbox` |
+| `sandbox/get-ugate-token` | `get-ugate-token-sandbox` |
+
+沙箱版鉴权改走每个 `-sandbox` 目录里的脚本：每次会话先 `ensure-token.sh <uuap>` 把 token 从持久仓库 hydrate 回当前 `$HOME`（退出码 0 = 就绪，3 = 没有持久来源、需重缓存），读不到再用 `cache-ugate-token.sh <uuap>` 重新缓存（同时写持久仓库和本会话）。其余读写命令仍照主版 `route.md` 跑。细节见各 `-sandbox` 目录的 `SKILL.md` / `route.md` 和 `sandbox/README.md`。
+
+### 2.1 安装主版 skill 目录
+
 按当前 agent 的 skill 安装方式安装用户选择的 skill。不要把整个 `baidu_promote` 仓库作为一层 skill 安装；要把下面这些 skill 目录分别直接放进当前 agent 的 skills 目录：
 
 - `ku-doc-manage`
@@ -87,11 +110,11 @@ https://uuap.baidu.com/agent/token
 
 第四步：不要启动一个命令长时间等待用户输入。正确节奏是：开头先让用户打开页面并复制或发送 token，等用户回复后，再统一运行缓存动作。
 
-第五步：使用 `get-ugate-token` 完成 UGate 缓存，并确认本机出现对应的 UGate 缓存文件。
+第五步：使用 `get-ugate-token` 完成 UGate 缓存，并确认本机出现对应的 UGate 缓存文件。（沙箱版：改用 `get-ugate-token-sandbox` 的 `cache-ugate-token.sh` 缓存到持久仓库，再用 `ensure-token.sh` hydrate；见 2.0。）
 
 ### ④ UGate 缓存
 
-第一步：确认本机已有当前 UUAP 的 UGate 缓存。
+第一步：确认本机已有当前 UUAP 的 UGate 缓存。（沙箱版：每个新会话先跑 `ensure-token.sh <uuap>` 从持久仓库 hydrate 回当前 `$HOME`，退出码 0 即就绪；见 2.0。）
 
 第二步：如果没有，回到“③ UGate token 页面内容”完成缓存。
 
