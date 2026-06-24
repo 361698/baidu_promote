@@ -13,6 +13,7 @@
 - 周报详情要先搜索拿 `uuap` 和日期。
 - OKR 详情要先搜索拿 `uid` 或 `uuap`、年份等参数。
 - 搜群只负责把自然语言线索转成 `gid`；拉群聊历史交给 `knowledge-fetch`。
+- 搜群拿到“群名+gid（群号）”后，追加/更新到 `knowledge-fetch` skill 的 `group-directory.yaml`（群名↔群号缓存，只存群名和群号），方便用户后续直接说群名取号。
 
 ## 内容要求
 
