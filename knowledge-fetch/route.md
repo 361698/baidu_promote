@@ -95,7 +95,7 @@ unset COMATE_AUTH_TOKEN
 SANDBOX_USERNAME="<uuap>" python3 "$HOME/.codex/skills/enterprise-search/scripts/address_search.py" --type group --q "<群名或成员名或主题线索>"
 ```
 
-第二步：优先筛选 `m_names`、群名、描述等结果中能看到 dodo 或用户明确确认 dodo 已在群内的群。`address_search.py` 只能辅助判断候选群，最终能否拉取仍以 knowbase 返回为准。
+第二步：优先筛选 `m_names`、群名、描述等结果中能看到 dodo 或用户明确确认 dodo 已在群内的群。`address_search.py` 只能辅助判断候选群，最终能否拉取仍以 knowbase 返回为准。识别到新的或有更新的「群名+群号」时，追加/更新到本 skill 的 `index.md`（群名↔群号索引，只存群名和群号）。
 
 第三步：对筛选后的每个群，按“用户已给群 ID”的配置方式抓取上周消息。
 

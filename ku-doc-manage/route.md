@@ -98,6 +98,8 @@ bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manag
 bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manage/bin/ku"; "$KU" create-doc --repo-id "<repositoryGuid>" --parent-doc-id "<parentDocGuid>" --username "$SANDBOX_USERNAME" --title "子文档标题" --create-mode empty --process-images=false'
 ```
 
+创建/发布成功后，把「文档名、作者、链接、docGuid、repositoryGuid」追加/更新到本 skill 的 `index.md`（文档索引），方便后续按文档名定位；识别到已有文档更新时同样更新该行。只存这几列，不写正文。
+
 ## 编辑文档
 
 追加小节：
