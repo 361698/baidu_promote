@@ -1,0 +1,4 @@
+# 沙箱版鉴权目录，禁止提交真实 token / 凭据。
+**/private/
+**/.eac_ugate_token_*
+**/ugate_token_*
