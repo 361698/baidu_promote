@@ -61,7 +61,8 @@
 - 不要出现 `备注 | 备注 | ...` 这种无信息重复列，改成 `概要`、`规则`、`影响`、`处理方式` 等具体字段。
 - 中文段落不要用多个空格制造视觉间隔；用标点、换行、列表或表格列。
 - HTML demo 需要进 KU 时，先截图成 PNG 再插入 image；HTML、Excel、PDF、ZIP 更适合附件卡片。
-- Mermaid 在 KU 中通常表现为 `block-code` + `language:"mermaid"`，不保证直接渲染；需要可视化时优先导出图片再插入。
+- Mermaid 必须写成 KU 编辑器 JSON 的 `block-code` 节点，`data.language` 设为 `"mermaid"`，源码放在 `children[0].text`、多行用真实换行；不要用 `diagram` 节点，也不要写成普通 Markdown 的 ```mermaid 围栏文本（围栏在 KU 里只是纯文本，不渲染）。读回时 KU 可能把代码归一化成 `block-code-line` 子节点，识别时两种形态都要兼容。
+- 选视图：只要源码就放一个 `block-code`；只要效果图就放一张 PNG `image`（先把图渲染好上传到目标文档）；要“源码 + 效果图”就两块成对，先 `block-code` 再紧跟同一份源码渲染出的 PNG，图片 `src` 里的 `docGuid` 必须是目标文档自己的 ID。`edit-content --editor-mode cover` 的 `json` 只传正文节点数组，不传 `title` / `card` / `card-item` 包装层。发布后读回 JSON 核对 Mermaid 代码块、图片节点和图片 `docGuid`。
 
 ## 验证与沉淀
 

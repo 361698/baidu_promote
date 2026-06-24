@@ -127,6 +127,28 @@ bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manag
 https://rte.weiyun.baidu.com/wiki/attach/image/api/imageDownloadAddress?attachId=<attachId>&docGuid=<docGuid>
 ```
 
+### 插入 Mermaid（按视图选节点）
+
+Mermaid 写成 `block-code` 节点，`data.language:"mermaid"`，源码放 `children[0].text`，多行用真实换行。不要用 `diagram` 节点，也不要写成 Markdown ```mermaid 围栏（KU 里只是纯文本）。读回时 KU 可能把代码归一成 `block-code-line` 子节点，验证脚本两种形态都要认。
+
+- 只要源码：写一个 `block-code` 节点。
+- 只要效果图：先把图渲染成 PNG 并 `upload-attachment` 到目标文档，再写一个 `image` 节点（src 用上面的格式，`docGuid` 是目标文档 ID）。
+- 源码 + 效果图：两块成对，先 `block-code` 再紧跟同一份源码渲染出的 PNG `image`。
+
+`block-code` 写入形态：
+
+```json
+{"type":"block-code","data":{"language":"mermaid"},"children":[{"text":"flowchart TD\n  A[Source] --> B[Target]"}]}
+```
+
+写回命令（cover 只传正文节点数组，不传 `title`/`card`/`card-item` 包装层，也不要把 `result.content[0]` 标题节点写进 payload）：
+
+```bash
+bash -lc 'export SANDBOX_USERNAME="<uuap>"; KU="$HOME/.codex/skills/ku-doc-manage/bin/ku"; OPS='\''[{"mode":"cover","withNewCard":true,"json":[{"type":"block-code","data":{"language":"mermaid"},"children":[{"text":"flowchart TD\n  A[Source] --> B[Target]"}]}]}]'\''; "$KU" edit-content --doc-id "<docGuid>" --username "$SANDBOX_USERNAME" --editor-mode cover --operations "$OPS"; "$KU" publish-doc --doc-id "<docGuid>" --username "$SANDBOX_USERNAME"; "$KU" query-content --doc-id "<docGuid>" --protocol json --show-doc-info'
+```
+
+读回校验：能识别到 `block-code` 且 `data.language=mermaid`（写入态或 `block-code-line` 读回态都算）；图片节点数量符合预期；图片 `src` 的 `docGuid` 是目标文档 ID；正文未混入 `title/card/card-item` 包装层。
+
 表格必须写完整 `table` 节点，否则 Web 端空白不渲染（markdown 读回看似有表也算坏）：`table.data.width` 数组长度必须等于列数（两列写两个宽度），每个 `table-cell.data` 必须写 `{"rowspan":1,"colspan":1}`，建议带 `table.data.headless`；省略 `data` 会被默认成 `width:[106]` 单列、`colspan:0/rowspan:0` 导致整表不渲染。表头灰底给首行每个 `table-cell.data.backgroundColor` 写 `rgb(231, 230, 230)`。写完用 `query-content --protocol json` 核对 `width` 列数与每个 cell 的 `colspan/rowspan` 均为 1。两列表格 mock：
 
 ```json
