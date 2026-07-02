@@ -32,7 +32,7 @@ Default key:
 - `ownerId`: user/task namespace. This is the per-user data boundary.
 - `key`: use `20010927` unless the user gives a replacement. The script sends it as `X-Todo-Key`.
 - `content`: required only when adding or replacing todo content. Multi-line text is supported.
-- `dueDate`: optional `YYYY-MM-DD` string.
+- `dueDate`: optional `YYYY-MM-DD` or `YYYY-MM-DD HH:00` string. The web UI displays this as `YYYY/MM/DD HH`.
 
 ## Use the Script
 
@@ -40,10 +40,10 @@ Prefer `scripts/todo_api.py` for all API calls instead of hand-writing curl. It 
 
 ```bash
 python3 scripts/todo_api.py --owner-id pan list --include-hidden
-python3 scripts/todo_api.py --owner-id pan add --content $'第一行\n第二行' --due-date 2026-07-02
+python3 scripts/todo_api.py --owner-id pan add --content $'第一行\n第二行' --due-date '2026-07-02 14:00'
 python3 scripts/todo_api.py --owner-id pan hide --todo-id 12
 python3 scripts/todo_api.py --owner-id pan restore --todo-id 12
-python3 scripts/todo_api.py --owner-id pan update --todo-id 12 --content '改后的内容' --due-date 2026-07-03
+python3 scripts/todo_api.py --owner-id pan update --todo-id 12 --content '改后的内容' --due-date '2026-07-03 16:00'
 python3 scripts/todo_api.py --owner-id pan delete --todo-id 12
 python3 scripts/todo_api.py --owner-id pan clear-hidden
 ```
@@ -66,8 +66,8 @@ Optional flags:
 ## API Shape
 
 - `GET /api/todos?ownerId=<id>&includeHidden=1` lists todos.
-- `POST /api/todos` with `{ownerId, content, dueDate}` creates a todo.
-- `POST /api/todos/<todoId>` with `{ownerId, content?, dueDate?, hidden?}` updates a todo.
+- `POST /api/todos` with `{ownerId, content, dueDate, status?}` creates a todo.
+- `POST /api/todos/<todoId>` with `{ownerId, content?, dueDate?, status?, hidden?}` updates a todo. `status: "done"` means completed; empty status means unfinished; custom strings such as `还早` are supported.
 - `POST /api/todos/<todoId>/delete` with `{ownerId}` deletes one todo.
 - `POST /api/todos/hidden` with `{ownerId}` deletes all hidden todos for that owner.
 
