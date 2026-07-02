@@ -1,0 +1,4 @@
+interface:
+  display_name: "Aliyun Todo Manager"
+  short_description: "按用户 ID 管理阿里云待办任务"
+  default_prompt: "Use $ali-todo-manager to add, list, hide, restore, or delete cloud todos for a specified owner ID."
