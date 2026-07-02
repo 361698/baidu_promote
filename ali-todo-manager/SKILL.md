@@ -33,6 +33,7 @@ Default key:
 - `key`: use `20010927` unless the user gives a replacement. The script sends it as `X-Todo-Key`.
 - `content`: required only when adding or replacing todo content. Multi-line text is supported.
 - `dueDate`: optional `YYYY-MM-DD` or `YYYY-MM-DD HH:00` string. The web UI displays this as `YYYY/MM/DD HH`.
+- `status`: optional custom status string. Multiple custom statuses are stored as a comma-separated string, for example `还早,等反馈`. Completion is stored separately through `hidden`, not as a custom status.
 
 ## Use the Script
 
@@ -40,10 +41,10 @@ Prefer `scripts/todo_api.py` for all API calls instead of hand-writing curl. It 
 
 ```bash
 python3 scripts/todo_api.py --owner-id pan list --include-hidden
-python3 scripts/todo_api.py --owner-id pan add --content $'第一行\n第二行' --due-date '2026-07-02 14:00'
+python3 scripts/todo_api.py --owner-id pan add --content $'第一行\n第二行' --due-date '2026-07-02 14:00' --status '还早,等反馈'
 python3 scripts/todo_api.py --owner-id pan hide --todo-id 12
 python3 scripts/todo_api.py --owner-id pan restore --todo-id 12
-python3 scripts/todo_api.py --owner-id pan update --todo-id 12 --content '改后的内容' --due-date '2026-07-03 16:00'
+python3 scripts/todo_api.py --owner-id pan update --todo-id 12 --content '改后的内容' --due-date '2026-07-03 16:00' --status '等反馈'
 python3 scripts/todo_api.py --owner-id pan delete --todo-id 12
 python3 scripts/todo_api.py --owner-id pan clear-hidden
 ```
@@ -56,8 +57,8 @@ Optional flags:
 
 ## Behavior Rules
 
-- Treat “叉掉” as `hide`; hidden items are excluded from the default active list.
-- “恢复” maps to `restore`.
+- Treat “叉掉” / “已完成” as `hide`; completion is the `hidden` boolean. Hidden items are excluded from the default active list.
+- “恢复” maps to `restore`; restore flips `hidden` back to false and preserves any custom status string when the backend supports it.
 - “删除已叉掉” maps to `clear-hidden`; confirm with the user before bulk deleting if they did not explicitly ask for it.
 - Direct `delete` permanently removes a single todo. Use it when the user asks to delete a specific item.
 - Keep owner IDs exact. Do not normalize `pan` and `Pan` together.
@@ -67,8 +68,31 @@ Optional flags:
 
 - `GET /api/todos?ownerId=<id>&includeHidden=1` lists todos.
 - `POST /api/todos` with `{ownerId, content, dueDate, status?}` creates a todo.
-- `POST /api/todos/<todoId>` with `{ownerId, content?, dueDate?, status?, hidden?}` updates a todo. `status: "done"` means completed; empty status means unfinished; custom strings such as `还早` are supported.
+- `POST /api/todos/<todoId>` with `{ownerId, content?, dueDate?, status?, hidden?}` updates a todo. `hidden: true` means completed; `hidden: false` means restored. `status` stores custom labels only, and may contain comma-separated labels such as `还早,等反馈`. Empty status means no custom label. Legacy `status: "done"` is still accepted and maps to completed.
 - `POST /api/todos/<todoId>/delete` with `{ownerId}` deletes one todo.
 - `POST /api/todos/hidden` with `{ownerId}` deletes all hidden todos for that owner.
+
+## Current Backend Data Shape
+
+The persistent backend table is still simple and existing todos are not rebuilt during UI updates:
+
+```json
+{
+  "id": 12,
+  "ownerId": "pan",
+  "content": "多行 todo 内容",
+  "dueDate": "2026-07-03 16:00",
+  "status": "还早,等反馈",
+  "hidden": false,
+  "createdAt": "...",
+  "updatedAt": "...",
+  "hiddenAt": null
+}
+```
+
+- `ownerId` is the user boundary.
+- `hidden` is completion/cross-out state.
+- `status` is for custom tags and supports multiple values separated by commas.
+- Link tag parsing is frontend configuration only: rules are `包含关键词 | 标签 | 颜色`, e.g. `ku.baidu-int.com | 如流 | 紫色`.
 
 All calls require header `X-Todo-Key: <key>`.

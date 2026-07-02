@@ -40,10 +40,12 @@ def request(base_url, key, path="", payload=None, query=None):
 
 
 def summarize_todo(todo):
-    marker = "×" if todo.get("hidden") else " "
+    marker = "✓" if todo.get("hidden") else " "
     due = todo.get("dueDate") or "无日期"
+    status = todo.get("status") or ""
+    label = f" {{{status}}}" if status and status != "done" else ""
     content = (todo.get("content") or "").replace("\n", " / ")
-    return f"[{marker}] #{todo.get('id')} {due}  {content}"
+    return f"[{marker}] #{todo.get('id')} {due}{label}  {content}"
 
 
 def print_result(data, raw=False):
@@ -79,11 +81,13 @@ def build_parser():
     p = sub.add_parser("add", parents=[common], help="Create a todo")
     p.add_argument("--content", required=True)
     p.add_argument("--due-date", default="")
+    p.add_argument("--status", default="", help="Custom status labels, comma-separated for multiple labels")
 
     p = sub.add_parser("update", parents=[common], help="Update content and/or date")
     p.add_argument("--todo-id", required=True, type=int)
     p.add_argument("--content")
     p.add_argument("--due-date")
+    p.add_argument("--status", help="Custom status labels, comma-separated for multiple labels")
 
     p = sub.add_parser("hide", parents=[common], help="Cross out / hide a todo")
     p.add_argument("--todo-id", required=True, type=int)
@@ -104,15 +108,17 @@ def main(argv=None):
     if args.command == "list":
         data = request(args.base_url, args.key, query={"ownerId": owner, "includeHidden": "1" if args.include_hidden else "0"})
     elif args.command == "add":
-        data = request(args.base_url, args.key, payload={"ownerId": owner, "content": args.content, "dueDate": args.due_date})
+        data = request(args.base_url, args.key, payload={"ownerId": owner, "content": args.content, "dueDate": args.due_date, "status": args.status})
     elif args.command == "update":
         payload = {"ownerId": owner}
         if args.content is not None:
             payload["content"] = args.content
         if args.due_date is not None:
             payload["dueDate"] = args.due_date
+        if args.status is not None:
+            payload["status"] = args.status
         if len(payload) == 1:
-            raise SystemExit("Nothing to update: pass --content and/or --due-date")
+            raise SystemExit("Nothing to update: pass --content, --due-date and/or --status")
         data = request(args.base_url, args.key, f"/{args.todo_id}", payload=payload)
     elif args.command == "hide":
         data = request(args.base_url, args.key, f"/{args.todo_id}", payload={"ownerId": owner, "hidden": True})
